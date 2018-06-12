@@ -20,11 +20,18 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+require "securerandom"
 require "vagrant"
+
 
 module VagrantPlugins
   module Skytap
     class Config < Vagrant.plugin("2", :config)
+      # Name of the VM
+      #
+      # @return [String]
+      attr_accessor :name
+
       # The user id for accessing Skytap.
       #
       # @return [String]
@@ -80,7 +87,18 @@ module VagrantPlugins
       # @return [String]
       attr_accessor :environment_name
 
+      # The name of the default network
+      #
+      # @return [String]
+      attr_accessor :default_network_name
+
+      # The list of networks associated with the environment or machine
+      #
+      # @return [Hash]
+      attr_accessor :networks
+
       def initialize(region_specific=false)
+        @name                   = UNSET_VALUE
         @username               = UNSET_VALUE
         @api_token              = UNSET_VALUE
         @base_url               = UNSET_VALUE
@@ -88,12 +106,13 @@ module VagrantPlugins
         @vpn_url                = UNSET_VALUE
         @instance_ready_timeout = UNSET_VALUE
         @region                 = UNSET_VALUE
-
         @cpus                   = UNSET_VALUE
         @cpuspersocket          = UNSET_VALUE
         @ram                    = UNSET_VALUE
         @guestos                = UNSET_VALUE
         @environment_name       = UNSET_VALUE
+        @default_network_name   = UNSET_VALUE
+        @networks               = UNSET_VALUE
       end
 
       #-------------------------------------------------------------------
@@ -101,6 +120,9 @@ module VagrantPlugins
       #-------------------------------------------------------------------
 
       def finalize!
+        # Set the name to nil, the name must be set here to maintain backward compatibility
+        @name = nil if @name == UNSET_VALUE
+
         # Try to get access keys from standard Skytap environment variables; they
         # will default to nil if the environment variables are not present.
         @username  = ENV['VAGRANT_SKYTAP_USERNAME']  if @username  == UNSET_VALUE
@@ -128,8 +150,46 @@ module VagrantPlugins
         # Environment Name default to nil
         @environment_name = nil if @environment_name == UNSET_VALUE
 
+        # Default Network Name default to nil
+        @default_network_name = nil if @default_network_name == UNSET_VALUE
+
+        # networks default to {}
+        @networks = {} if @networks == UNSET_VALUE
+
         # Mark that we finalized
         @__finalized = true
+      end
+
+      # Define the network adapter along with the configuration
+      #
+      # `type` can be of the following:
+      #
+      # * :default - used to define and modify the default network adapter attached to the VM
+      #
+      # * :private_network - used to specify additional networks in the environment
+      def network(type, **options)
+        options = options.dup
+
+        # networks default to {}
+        @networks = {} if @networks == UNSET_VALUE
+
+        if !options[:id]
+          default_id = nil
+
+          options[:id] = default_id || SecureRandom.uuid
+        end
+
+        # Scope the ID by type so that different types can share IDs
+        id      = options[:id]
+        id      = "#{type}-#{id}"
+
+        # Merge in the previous settings if we have them.
+        if @networks.key?(id)
+          options = @networks[id][1].merge(options)
+        end
+
+        # Merge in the latest settings and set the internal state
+        @networks[id] = [type.to_sym, options]
       end
 
       def validate(machine)

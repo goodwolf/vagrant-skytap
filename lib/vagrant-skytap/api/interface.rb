@@ -139,6 +139,11 @@ module VagrantPlugins
           end
         end
 
+        def attach_to_network(network_id)
+          puts "\n\n\n\n-----\n\nattach_to_network: #{env.inspect}"
+          env[:api_client].put("/configurations/#{vm.parent.id}/vms/#{vm.id}/interfaces/#{id}.json", JSON.dump(network_id: network_id))
+        end
+
         def refresh(attrs)
           @public_ips = nil
           @published_services = nil

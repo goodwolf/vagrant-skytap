@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2016 Skytap, Inc.
+# Copyright (c) 2014-2018 Skytap, Inc.
 #
 # The MIT License (MIT)
 #
@@ -20,36 +20,32 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-require 'log4r'
-require 'vagrant-skytap/api/vm'
-
-
 module VagrantPlugins
   module Skytap
-    module Action
-      # Adds the specified vm to this Skytap environment, assuming the vm and environment
-      # both exist.
-      class AddVmToEnvironment
-        attr_reader :env
+    module Util
+      module VM
+        class << self
+          # Validates a set of VMs can be used together in a REST call to
+          # create a new environment, or to add to an existing environment.
+          #
+          # @param [Array] vms The [API::Vm] objects to validate
+          # @param [API::Environment] environment to validate against (optional)
+          # @return [Boolean] strue, if no exceptions were raised
+          def check_vms_before_adding(vms, environment = nil)
+            vms.each do |vm|
+              raise Errors::SourceVmNotStopped, url: vm.url unless vm.stopped?
+            end
 
-        def initialize(app, env)
-          @app = app
-          @env = env
-          @logger = Log4r::Logger.new("vagrant_skytap::action::add_vm_to_environment")
-        end
+            raise Errors::VmParentMismatch, vm_ids: vms.collect(&:id).join(', ') unless vms.collect(&:parent_url).uniq.count == 1
 
-        def call(env)
-          environment = env[:environment]
-          vm = API::Vm.fetch(env, vm_url)
-          environment.add_vms([vm])
-          env[:machine].id = environment.vms.last.id
-          environment.wait_until_ready
-
-          @app.call(env)
-        end
-
-        def vm_url
-          env[:machine].provider_config.vm_url
+            if environment
+              parent = vms.first.parent
+              unless parent.region == environment.region
+                raise Errors::RegionMismatch, environment_region: environment.region, vm_region: parent.region
+              end
+            end
+            true
+          end
         end
       end
     end

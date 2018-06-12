@@ -331,7 +331,6 @@ module VagrantPlugins
       # The autoload farm
       action_root = Pathname.new(File.expand_path("../action", __FILE__))
       autoload :StoreExtraData, action_root.join("store_extra_data")
-      autoload :AddVmToEnvironment, action_root.join("add_vm_to_environment")
       autoload :CheckCreated, action_root.join("check_created")
       autoload :CheckRunning, action_root.join("check_running")
       autoload :ClearForwardedPorts, action_root.join("clear_forwarded_ports")
@@ -355,6 +354,7 @@ module VagrantPlugins
       autoload :MessageEnvironmentUrl, action_root.join("message_environment_url")
       autoload :MessageResuming, action_root.join("message_resuming")
       autoload :MessageWillNotDestroy, action_root.join("message_will_not_destroy")
+      autoload :Network, action_root.join("network")
       autoload :PrepareForwardedPortCollisionParams, action_root.join("prepare_forwarded_port_collision_params")
       autoload :PrepareNFSSettings, action_root.join("prepare_nfs_settings")
       autoload :PrepareNFSValidIds, action_root.join("prepare_nfs_valid_ids")

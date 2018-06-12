@@ -41,7 +41,7 @@ module VagrantPlugins
           uri = URI.parse(config.base_url)
           @http = Net::HTTP.new(uri.host, uri.port)
 
-          @http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+          @http.verify_mode = OpenSSL::SSL::VERIFY_PEER
 
           @http.use_ssl = uri.port == 443 || uri.scheme == 'https'
         end

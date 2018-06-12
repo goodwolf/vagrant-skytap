@@ -21,6 +21,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 require 'vagrant-skytap/api/environment'
+require 'vagrant-skytap/api/network'
 require 'vagrant-skytap/api/vm'
 
 module VagrantPlugins
@@ -47,6 +48,9 @@ module VagrantPlugins
           environment = env[:environment]
           new_environment = !environment
           machines = env[:machines].reject(&:id)
+
+          # Create the networks as defined
+
           environment = add_vms(environment, machines)
 
           if new_environment
@@ -57,6 +61,9 @@ module VagrantPlugins
           else
             env[:ui].info("No new VMs added to #{environment.url}.")
           end
+
+          # Create the networks defined for the environment
+          add_network(environment)
 
           @app.call(env)
         end
@@ -84,7 +91,29 @@ module VagrantPlugins
               vms = environment.add_vms(vms_for_pass)
             end
 
-            vms.each_with_index {|vm, i| names_to_vm_ids[names[i]] = vm.id }
+            vms.each_with_index do |vm, i|
+              names_to_vm_ids[names[i]] = vm.id
+              @logger.debug("VM ID: #{vm.id} VM NAME: #{vm.name}")
+              vm.set_name(env, vm.provider_config.name) if vm.provider_config.name
+
+              if defined?(vm.provider_config.networks)
+
+                vm.delete_interfaces(env)
+                vm.provider_config.networks.each do |k,v|
+                  new_network = v[1].dup
+                  new_network.delete(:id)
+
+                  new_network = environment.add_network(@env, new_network)
+
+                  @logger.info("Creating a new interface for the vm")
+                  # Create the network interface for the machine
+                  new_interface = vm.create_network_interface(env)
+
+                  # Attach the network interface to the network
+                  new_interface.attach_to_network(new_network.id)
+                end
+              end
+            end
           end
 
           machines.each do |machine|
@@ -92,6 +121,19 @@ module VagrantPlugins
           end
 
           environment
+        end
+
+        # Add a network to the current environment
+        #
+        # @param [API::Environment] environment of the Skytap environment, if it exists
+        # @return [API::Network] The new network created in the environment
+        def add_network(environment, attrs={})
+
+          machines = environment.vms
+
+          machines.each do |machine|
+            puts machine.provider_config.inspect
+          end
         end
 
         # Fetch the source VMs for the given machines.

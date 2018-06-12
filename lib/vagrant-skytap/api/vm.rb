@@ -23,6 +23,7 @@
 require 'vagrant-skytap/api/resource'
 require 'vagrant-skytap/api/interface'
 require 'vagrant-skytap/api/credentials'
+require 'vagrant-skytap/util/ruby_extensions'
 require_relative 'runstate_operations'
 
 module VagrantPlugins
@@ -41,6 +42,42 @@ module VagrantPlugins
             resp = env[:api_client].get(url)
             new(JSON.load(resp.body), env[:environment], env)
           end
+
+
+        end
+
+        def create_network_interface(env, attrs={})
+          network_adapter_attributes = {
+              nic_type: 'default'
+          }
+
+          # merge passed attributes from the Vagrantfile
+          network_adapter_attributes.merge!(attrs)
+
+          # call the REST API to create the interface
+          resp = env[:api_client].post("/configurations/#{self.parent.id}/vms/#{id}/interfaces.json", JSON.dump(network_adapter_attributes))
+
+          # Create an instance of Interface to store the returned interface
+          Interface.new(JSON.load(resp.body), self, env)
+        end
+
+        def delete_interfaces(env)
+          resp = env[:api_client].get("/configurations/#{self.parent.id}/vms/#{id}/interfaces.json")
+
+          network_interfaces = JSON.load(resp.body)
+          puts network_interfaces
+
+          network_interfaces.each do |interface|
+            interface = interface.symbolize_keys
+            puts interface.inspect
+            env[:api_client].delete("/configurations/#{self.parent.id}/vms/#{id}/interfaces/#{interface[:id]}")
+          end
+        end
+
+        def set_name(env, name)
+          resp = env[:api_client].put("/vms/#{id}?name=#{name}")
+
+          JSON.load(resp.body)
         end
 
         def initialize(attrs, environment, env)

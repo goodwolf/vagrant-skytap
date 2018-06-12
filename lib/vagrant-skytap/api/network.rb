@@ -25,11 +25,15 @@ require 'vagrant-skytap/api/vpn_attachment'
 require 'vagrant-skytap/api/tunnel'
 require 'vagrant-skytap/util/subnet'
 require 'vagrant-skytap/api/connectable'
+require 'vagrant-skytap/util/vm'
+require 'vagrant-skytap/util/ruby_extensions'
+
 
 module VagrantPlugins
   module Skytap
     module API
       class Network < Resource
+        include VagrantPlugins::Skytap::Util::VM
         include Connectable
 
         attr_reader :environment
@@ -43,6 +47,56 @@ module VagrantPlugins
 
         def url
           "/configurations/#{environment.id}/networks/#{id}"
+        end
+
+        class << self
+          def create!(env, attrs)
+            network_attributes = {
+                name: 'default',
+                network_type: 'automatic',
+            }
+
+            # ID of the environment
+            environment_id = env.id
+
+            # Merge the passed attributes to the default attributes
+            network_attributes.merge!(attrs)
+
+            # Create the network, return the json payload from the API
+            resp = env.env[:api_client].post("/configurations/#{environment_id}/networks.json", JSON.dump(network_attributes))
+
+            Network.new(JSON.load(resp.body), env.env[:environment], env.env)
+          end
+
+          # Checks to see if the environment exists
+          #
+          # @Return [Boolean]
+          def exists?(env, attrs)
+            # pass a hash to attrs, this may contain the following
+            # network - String representing the subnet of the network
+
+            if not attrs.has_key?(:subnet)
+              raise "attrs does not contain a key for :subnet"
+            end
+
+            # ID of the environment
+            #
+            environment_id = env.id
+
+            resp = env.env[:api_client].get("/configurations/#{environment_id}/networks.json")
+            current_networks = JSON.parse(resp.body)
+
+            current_networks.each do |network|
+
+              network = network.symbolize_keys
+
+              if network[:subnet].eql?(attrs[:subnet])
+                return true
+              end
+            end
+
+            false
+          end
         end
 
         def refresh(attrs)

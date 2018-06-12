@@ -13,7 +13,7 @@
 # all copies or substantial portions of the Software.
 #
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# IMPLIED, INCLUDING BUT NOT sLIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
@@ -27,6 +27,7 @@ require 'vagrant-skytap/api/resource'
 require 'vagrant-skytap/api/vm'
 require 'vagrant-skytap/api/network'
 require 'vagrant-skytap/api/publish_set'
+require 'vagrant-skytap/util/vm'
 
 require_relative 'runstate_operations'
 
@@ -34,7 +35,7 @@ module VagrantPlugins
   module Skytap
     module API
       class Environment < Resource
-        include RunstateOperations
+        include RunstateOperations, VagrantPlugins::Skytap::Util::VM
 
         RESOURCE_ROOT = '/configurations'
         class << self
@@ -45,7 +46,7 @@ module VagrantPlugins
           # @param [Array] vms The source [API::Vm] objects
           # @return [API::Environment]
           def create!(env, vms)
-            check_vms_before_adding(vms)
+            VagrantPlugins::Skytap::Util::VM.check_vms_before_adding(vms)
             vm = vms.first
 
             provider_config = env[:machine].provider_config
@@ -61,7 +62,7 @@ module VagrantPlugins
             end
 
             resp = env[:api_client].post(RESOURCE_ROOT, JSON.dump(args))
-            new(JSON.load(resp.body), env)
+            new(JSON.parse(resp.body), env)
           end
 
           # Makes the REST call to retrieve an existing environment.
@@ -71,33 +72,11 @@ module VagrantPlugins
           # @return [API::Environment]
           def fetch(env, url)
             resp = env[:api_client].get(url)
-            new(JSON.load(resp.body), env)
+            new(JSON.parse(resp.body), env)
           end
 
           def properties(env)
             EnvironmentProperties.read(env[:machine].env.local_data_path)
-          end
-
-          # Validates that a set of VMs can be used together in a REST call to
-          # create a new environment, or to add to an existing environment.
-          #
-          # @param [Array] vms The [API::Vm] objects to validate
-          # @param [API::Environment] environment to validate against (optional)
-          # @return [Boolean] true, if no exceptions were raised
-          def check_vms_before_adding(vms, environment = nil)
-            vms.each do |vm|
-              raise Errors::SourceVmNotStopped, url: vm.url unless vm.stopped?
-            end
-
-            raise Errors::VmParentMismatch, vm_ids: vms.collect(&:id).join(', ') unless vms.collect(&:parent_url).uniq.count == 1
-
-            if environment
-              parent = vms.first.parent
-              unless parent.region == environment.region
-                raise Errors::RegionMismatch, environment_region: environment.region, vm_region: parent.region
-              end
-            end
-            true
           end
         end
 
@@ -148,6 +127,20 @@ module VagrantPlugins
           set_runstate :running, vm_ids: vm_ids
         end
 
+        # Add a network to the environment
+        #
+        # @param [Hash] attributes for the network
+        # @return [Hash] Return JSON payload if successful, otherwise empty hash
+        def add_network(env, attrs={})
+          payload = {}
+
+          if not API::Network.exists?(self, attrs)
+            payload = API::Network.create!(self, attrs)
+          end
+
+          payload
+        end
+
         # Makes the REST call to add VMs to this environment, using
         # the provided VMs as sources.
         #
@@ -155,7 +148,7 @@ module VagrantPlugins
         # @return [Array] The new [API::Vm] objects
         def add_vms(vms)
           return unless vms.present?
-          self.class.check_vms_before_adding(vms, self)
+          VagrantPlugins::Skytap::Util::VM.check_vms_before_adding(vms, self)
 
           args = {vm_ids: vms.collect(&:id)}.tap do |ret|
             if vms.first.from_template?
@@ -167,12 +160,13 @@ module VagrantPlugins
 
           existing_vm_ids = self.vms.collect(&:id)
           update(args)
+
           get_vms_by_id(self.vms.collect(&:id) - existing_vm_ids)
         end
 
         def create_publish_set(attrs={})
           resp = api_client.post("#{url}/publish_sets", JSON.dump(attrs))
-          PublishSet.new(JSON.load(resp.body), self, env)
+          PublishSet.new(JSON.parse(resp.body), self, env)
         end
 
         def properties
@@ -191,3 +185,5 @@ module VagrantPlugins
     end
   end
 end
+
+

@@ -15,6 +15,10 @@ Gemfile.lock
 .vagrant
 /Vagrantfile
 
+# IDE
+.idea
+*.iml
+
 # RVM files for gemset/ruby setting
 .ruby-*
 .rvmrc
