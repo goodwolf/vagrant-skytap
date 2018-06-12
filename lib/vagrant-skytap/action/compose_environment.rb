@@ -62,9 +62,6 @@ module VagrantPlugins
             env[:ui].info("No new VMs added to #{environment.url}.")
           end
 
-          # Create the networks defined for the environment
-          add_network(environment)
-
           @app.call(env)
         end
 
@@ -121,19 +118,6 @@ module VagrantPlugins
           end
 
           environment
-        end
-
-        # Add a network to the current environment
-        #
-        # @param [API::Environment] environment of the Skytap environment, if it exists
-        # @return [API::Network] The new network created in the environment
-        def add_network(environment, attrs={})
-
-          machines = environment.vms
-
-          machines.each do |machine|
-            puts machine.provider_config.inspect
-          end
         end
 
         # Fetch the source VMs for the given machines.

@@ -13,7 +13,7 @@
 # all copies or substantial portions of the Software.
 #
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT sLIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
@@ -62,7 +62,7 @@ module VagrantPlugins
             end
 
             resp = env[:api_client].post(RESOURCE_ROOT, JSON.dump(args))
-            new(JSON.parse(resp.body), env)
+            new(JSON.load(resp.body), env)
           end
 
           # Makes the REST call to retrieve an existing environment.
@@ -72,7 +72,7 @@ module VagrantPlugins
           # @return [API::Environment]
           def fetch(env, url)
             resp = env[:api_client].get(url)
-            new(JSON.parse(resp.body), env)
+            new(JSON.load(resp.body), env)
           end
 
           def properties(env)

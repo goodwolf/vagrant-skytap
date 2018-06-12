@@ -65,11 +65,9 @@ module VagrantPlugins
           resp = env[:api_client].get("/configurations/#{self.parent.id}/vms/#{id}/interfaces.json")
 
           network_interfaces = JSON.load(resp.body)
-          puts network_interfaces
 
           network_interfaces.each do |interface|
             interface = interface.symbolize_keys
-            puts interface.inspect
             env[:api_client].delete("/configurations/#{self.parent.id}/vms/#{id}/interfaces/#{interface[:id]}")
           end
         end
