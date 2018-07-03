@@ -104,14 +104,18 @@ module VagrantPlugins
                 end
               end
 
+              if vm.provider_config.delete_network_adapters
+                vm.delete_interfaces(env)
+              end
+
               if defined?(vm.provider_config.networks)
 
-                #vm.delete_interfaces(env)
                 vm.provider_config.networks.each do |k,v|
                   new_network = v[1].dup
                   new_network.delete(:id)
                   new_network.delete(:ip)
 
+                  @logger.info("Creating new network")
                   new_network = environment.add_network(@env, new_network)
 
                   @logger.info("Creating a new interface for the vm")

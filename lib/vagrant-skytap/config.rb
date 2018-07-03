@@ -108,24 +108,30 @@ module VagrantPlugins
       # @return [Hash]
       attr_accessor :disks
 
+      # Delete all network adapters on the machine if set to true
+      #
+      # @return [String]
+      attr_accessor :delete_network_adapters
+
       def initialize(region_specific=false)
-        @name                   = UNSET_VALUE
-        @username               = UNSET_VALUE
-        @api_token              = UNSET_VALUE
-        @base_url               = UNSET_VALUE
-        @vm_url                 = UNSET_VALUE
-        @vpn_url                = UNSET_VALUE
-        @instance_ready_timeout = UNSET_VALUE
-        @region                 = UNSET_VALUE
-        @cpus                   = UNSET_VALUE
-        @cpuspersocket          = UNSET_VALUE
-        @ram                    = UNSET_VALUE
-        @guestos                = UNSET_VALUE
-        @environment_name       = UNSET_VALUE
-        @default_network_name   = UNSET_VALUE
-        @networks               = UNSET_VALUE
-        @user_data              = UNSET_VALUE
-        @disks                  = UNSET_VALUE
+        @name                    = UNSET_VALUE
+        @username                = UNSET_VALUE
+        @api_token               = UNSET_VALUE
+        @base_url                = UNSET_VALUE
+        @vm_url                  = UNSET_VALUE
+        @vpn_url                 = UNSET_VALUE
+        @instance_ready_timeout  = UNSET_VALUE
+        @region                  = UNSET_VALUE
+        @cpus                    = UNSET_VALUE
+        @cpuspersocket           = UNSET_VALUE
+        @ram                     = UNSET_VALUE
+        @guestos                 = UNSET_VALUE
+        @environment_name        = UNSET_VALUE
+        @default_network_name    = UNSET_VALUE
+        @networks                = UNSET_VALUE
+        @user_data               = UNSET_VALUE
+        @disks                   = UNSET_VALUE
+        @delete_network_adapters = UNSET_VALUE
       end
 
       #-------------------------------------------------------------------
@@ -172,6 +178,9 @@ module VagrantPlugins
         # disks default to {}
         @disks = {} if @disks == UNSET_VALUE
 
+        # delete_network_adapters default to false
+        @delete_network_adapters = false if @delete_network_adapters == UNSET_VALUE
+
         # Mark that we finalized
         @__finalized = true
       end
@@ -196,8 +205,7 @@ module VagrantPlugins
         end
 
         # Scope the ID by type so that different types can share IDs
-        id      = options[:id]
-        id      = "#{type}-#{id}"
+        id      = "#{type}-#{options[:id]}"
 
         # Merge in the previous settings if we have them.
         if @networks.key?(id)

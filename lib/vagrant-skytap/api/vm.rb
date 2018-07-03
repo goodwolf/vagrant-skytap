@@ -68,7 +68,6 @@ module VagrantPlugins
 
           network_interfaces.each do |interface|
             interface = interface.symbolize_keys
-            @logger.info("deleting interface adapter #{interface[:id]} from vm #{id}")
             env[:api_client].delete("/configurations/#{self.parent.id}/vms/#{id}/interfaces/#{interface[:id]}")
           end
         end
