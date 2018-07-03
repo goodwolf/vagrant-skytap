@@ -108,6 +108,20 @@ module VagrantPlugins
           get_api_attribute('nat_addresses') || {}
         end
 
+        def attach_ip(ip)
+          if ip.is_a?(PublicIp)
+            attach_public_ip(ip)
+          else
+            attach_private_ip(ip)
+          end
+        end
+
+        def attach_private_ip(ip)
+          resp = api_client.put("#{url}.json", JSON.dump(ip: ip))
+
+          JSON.load(resp.body)
+        end
+
         def attach_public_ip(ip)
           address = ip.is_a?(PublicIp) ? ip.address : ip.to_s
           begin

@@ -93,12 +93,24 @@ module VagrantPlugins
               @logger.debug("VM ID: #{vm.id} VM NAME: #{vm.name}")
               vm.set_name(env, vm.provider_config.name) if vm.provider_config.name
 
+              if defined?(vm.provider_config.user_data)
+                vm.set_user_data(@env, vm.provider_config.user_data)
+              end
+
+              if defined?(vm.provider_config.disks)
+                vm.provider_config.disks.each do |k, v|
+                  new_disk = v.dup
+                  vm.add_disk(@env, new_disk)
+                end
+              end
+
               if defined?(vm.provider_config.networks)
 
-                vm.delete_interfaces(env)
+                #vm.delete_interfaces(env)
                 vm.provider_config.networks.each do |k,v|
                   new_network = v[1].dup
                   new_network.delete(:id)
+                  new_network.delete(:ip)
 
                   new_network = environment.add_network(@env, new_network)
 
@@ -108,6 +120,10 @@ module VagrantPlugins
 
                   # Attach the network interface to the network
                   new_interface.attach_to_network(new_network.id)
+
+                  if v[1][:ip]
+                    new_interface.attach_private_ip(v[1][:ip])
+                  end
                 end
               end
             end

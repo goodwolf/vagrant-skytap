@@ -52,8 +52,7 @@ module VagrantPlugins
         class << self
           def create!(env, attrs)
             network_attributes = {
-                name: 'default',
-                network_type: 'automatic',
+                name: 'default'
             }
 
             # ID of the environment
@@ -61,6 +60,11 @@ module VagrantPlugins
 
             # Merge the passed attributes to the default attributes
             network_attributes.merge!(attrs)
+
+            # Set network type as defined, must be automatic or manual
+            if attrs.has_key?(:type)
+              network_attributes[:network_type] = attrs[:type].dup
+            end
 
             # Create the network, return the json payload from the API
             resp = env.env[:api_client].post("/configurations/#{environment_id}/networks.json", JSON.dump(network_attributes))

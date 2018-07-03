@@ -68,12 +68,38 @@ module VagrantPlugins
 
           network_interfaces.each do |interface|
             interface = interface.symbolize_keys
+            @logger.info("deleting interface adapter #{interface[:id]} from vm #{id}")
             env[:api_client].delete("/configurations/#{self.parent.id}/vms/#{id}/interfaces/#{interface[:id]}")
           end
         end
 
         def set_name(env, name)
           resp = env[:api_client].put("/vms/#{id}?name=#{name}")
+
+          JSON.load(resp.body)
+        end
+
+        def set_user_data(env, user_data)
+          user_data_attributes = {
+              contents: user_data
+          }
+
+          resp = env[:api_client].put("/vms/#{id}/user_data.json", JSON.dump(user_data_attributes))
+
+          JSON.load(resp.body)
+        end
+
+        def add_disk(env, attrs={})
+
+          new_disk_attributes = {
+              hardware: {
+                  disks: {
+                      new: [attrs[:size]]
+                  }
+              }
+          }
+
+          resp = env[:api_client].put("/vms/#{id}.json", JSON.dump(new_disk_attributes) )
 
           JSON.load(resp.body)
         end

@@ -97,6 +97,17 @@ module VagrantPlugins
       # @return [Hash]
       attr_accessor :networks
 
+      # The user_data to be passed to the VM
+      # Currently the maximum limit is set to 16,384 characters
+      #
+      # @return [String]
+      attr_accessor :user_data
+
+      # The disks to be created on creation of the VM
+      #
+      # @return [Hash]
+      attr_accessor :disks
+
       def initialize(region_specific=false)
         @name                   = UNSET_VALUE
         @username               = UNSET_VALUE
@@ -113,6 +124,8 @@ module VagrantPlugins
         @environment_name       = UNSET_VALUE
         @default_network_name   = UNSET_VALUE
         @networks               = UNSET_VALUE
+        @user_data              = UNSET_VALUE
+        @disks                  = UNSET_VALUE
       end
 
       #-------------------------------------------------------------------
@@ -156,6 +169,9 @@ module VagrantPlugins
         # networks default to {}
         @networks = {} if @networks == UNSET_VALUE
 
+        # disks default to {}
+        @disks = {} if @disks == UNSET_VALUE
+
         # Mark that we finalized
         @__finalized = true
       end
@@ -190,6 +206,16 @@ module VagrantPlugins
 
         # Merge in the latest settings and set the internal state
         @networks[id] = [type.to_sym, options]
+      end
+
+      def disk(action, **options)
+        @disks = {} if @disks == UNSET_VALUE
+
+        disk_id = SecureRandom.uuid
+
+        if action.eql?(:add_on_run)
+          @disks[disk_id] = options
+        end
       end
 
       def validate(machine)
