@@ -38,6 +38,7 @@ module VagrantPlugins
         def call(env)
           env[:machine_ssh_info] = VmProperties.new(env[:machine].data_dir).ssh_info
 
+          puts env[:machine_ssh_info].inspect
           if defined?(env[:machine].provider_config.ssh_host)
             env[:machine_ssh_info][:host] = env[:machine].provider_config.ssh_host
           end

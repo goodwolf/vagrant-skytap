@@ -120,7 +120,7 @@ module VagrantPlugins
                   new_interface = vm.create_network_interface(env)
 
                   # Attach the network interface to the network
-                  #new_interface.attach_to_network(new_network.id)
+                  new_interface.attach_to_network(new_network.id)
 
                   if v[1][:ip]
                     new_interface.attach_private_ip(v[1][:ip])
