@@ -101,6 +101,31 @@ module VagrantPlugins
 
             false
           end
+
+          def subnet_search(env, attrs)
+            if not attrs.has_key?(:subnet)
+              raise "attrs does not contain a key for :subnet"
+            end
+
+            # ID of the environment
+            #
+            environment_id = env.id
+
+            resp = env.env[:api_client].get("/configurations/#{environment_id}/networks.json")
+            current_networks = JSON.parse(resp.body)
+
+            current_networks.each do |network|
+
+              network = network.symbolize_keys
+
+              if network[:subnet].eql?(attrs[:subnet])
+                # return the network json payload from the API
+                resp = env.env[:api_client].get("/configurations/#{environment_id}/networks/#{network[:id]}")
+
+                return Network.new(JSON.load(resp.body), env.env[:environment], env.env)
+              end
+            end
+          end
         end
 
         def refresh(attrs)

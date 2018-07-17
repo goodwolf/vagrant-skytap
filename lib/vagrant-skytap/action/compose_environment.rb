@@ -81,11 +81,9 @@ module VagrantPlugins
               environment = API::Environment.create!(env, vms_for_pass)
               environment.properties.write('url' => environment.url)
               vms = environment.vms
-              puts "returning existing vms"
             else
               @logger.debug("Adding source vms: #{vms_for_pass.collect(&:id)}")
               vms = environment.add_vms(vms_for_pass)
-              puts "vms for pass"
             end
 
             vms.each_with_index do |vm, i|
@@ -118,12 +116,12 @@ module VagrantPlugins
             if defined?(machine.provider_config.networks)
 
               machine.provider_config.networks.each do |k,v|
-                new_network = v[1].dup
-                new_network.delete(:id)
-                new_network.delete(:ip)
+                network_attrs = v[1].dup
+                network_attrs.delete(:id)
+                network_attrs.delete(:ip)
 
                 @logger.info("Creating new network")
-                new_network = environment.add_network(@env, new_network)
+                new_network = environment.add_network(@env, network_attrs)
 
                 @logger.info("Creating a new interface for the vm")
                 # Create the network interface for the machine

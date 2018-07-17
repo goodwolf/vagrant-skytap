@@ -136,6 +136,8 @@ module VagrantPlugins
 
           if not API::Network.exists?(self, attrs)
             payload = API::Network.create!(self, attrs)
+          else
+            payload = API::Network.subnet_search(self, attrs)
           end
 
           payload
