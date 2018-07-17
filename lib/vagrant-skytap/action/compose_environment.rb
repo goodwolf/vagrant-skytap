@@ -48,6 +48,7 @@ module VagrantPlugins
           environment = env[:environment]
           new_environment = !environment
           machines = env[:machines].reject(&:id)
+          puts machines.inspect
           environment = add_vms(environment, machines)
 
           if new_environment
@@ -80,58 +81,65 @@ module VagrantPlugins
               environment = API::Environment.create!(env, vms_for_pass)
               environment.properties.write('url' => environment.url)
               vms = environment.vms
+              puts "returning existing vms"
             else
               @logger.debug("Adding source vms: #{vms_for_pass.collect(&:id)}")
               vms = environment.add_vms(vms_for_pass)
+              puts "vms for pass"
             end
 
             vms.each_with_index do |vm, i|
               names_to_vm_ids[names[i]] = vm.id
-              @logger.debug("VM ID: #{vm.id} VM NAME: #{vm.name}")
-              vm.set_name(env, vm.provider_config.name) if vm.provider_config.name
-
-              if defined?(vm.provider_config.user_data)
-                vm.set_user_data(@env, vm.provider_config.user_data)
-              end
-
-              if defined?(vm.provider_config.disks)
-                vm.provider_config.disks.each do |k, v|
-                  new_disk = v.dup
-                  vm.add_disk(@env, new_disk)
-                end
-              end
-
-              if vm.provider_config.delete_network_adapters
-                vm.delete_interfaces(env)
-              end
-
-              if defined?(vm.provider_config.networks)
-
-                vm.provider_config.networks.each do |k,v|
-                  new_network = v[1].dup
-                  new_network.delete(:id)
-                  new_network.delete(:ip)
-
-                  @logger.info("Creating new network")
-                  new_network = environment.add_network(@env, new_network)
-
-                  @logger.info("Creating a new interface for the vm")
-                  # Create the network interface for the machine
-                  new_interface = vm.create_network_interface(env)
-
-                  # Attach the network interface to the network
-                  new_interface.attach_to_network(new_network.id)
-
-                  if v[1][:ip]
-                    new_interface.attach_private_ip(v[1][:ip])
-                  end
-                end
-              end
             end
+
           end
 
           machines.each do |machine|
             machine.id = names_to_vm_ids[machine.name]
+            vm = API::Vm.fetch(env, "https://cloud.skytap.com/vms/#{machine.id}/")
+
+            vm.set_name(env, machine.provider_config.name) if machine.provider_config.name
+
+            if defined?(machine.provider_config.user_data)
+              vm.set_user_data(@env, machine.provider_config.user_data)
+            end
+
+            if defined?(machine.provider_config.disks)
+              machine.provider_config.disks.each do |k, v|
+                new_disk = v.dup
+                vm.add_disk(@env, new_disk)
+              end
+            end
+
+            if machine.provider_config.delete_network_adapters
+              vm.delete_interfaces(env)
+            end
+
+            if defined?(machine.provider_config.networks)
+
+              machine.provider_config.networks.each do |k,v|
+                new_network = v[1].dup
+                new_network.delete(:id)
+                new_network.delete(:ip)
+
+                @logger.info("Creating new network")
+                new_network = environment.add_network(@env, new_network)
+
+                @logger.info("Creating a new interface for the vm")
+                # Create the network interface for the machine
+                new_interface = vm.create_network_interface(env)
+
+                # Attach the network interface to the network
+                new_interface.attach_to_network(new_network.id)
+
+                if v[1][:ip]
+                  new_interface.attach_private_ip(v[1][:ip])
+                end
+              end
+            end
+
+
+
           end
 
           environment
