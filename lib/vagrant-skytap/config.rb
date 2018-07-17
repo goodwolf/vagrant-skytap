@@ -113,6 +113,16 @@ module VagrantPlugins
       # @return [String]
       attr_accessor :delete_network_adapters
 
+      # Specify the IP address to attempt connecting to the machine
+      #
+      # @return [String]
+      attr_accessor :ssh_host
+
+      # Specify the port to attempt connecting to the machine
+      #
+      # @return [String]
+      attr_accessor :ssh_port
+
       def initialize(region_specific=false)
         @name                    = UNSET_VALUE
         @username                = UNSET_VALUE
@@ -132,6 +142,8 @@ module VagrantPlugins
         @user_data               = UNSET_VALUE
         @disks                   = UNSET_VALUE
         @delete_network_adapters = UNSET_VALUE
+        @ssh_host                = UNSET_VALUE
+        @ssh_port                = UNSET_VALUE
       end
 
       #-------------------------------------------------------------------
@@ -180,6 +192,13 @@ module VagrantPlugins
 
         # delete_network_adapters default to false
         @delete_network_adapters = false if @delete_network_adapters == UNSET_VALUE
+
+        # set the ssh host for the machine
+        @ssh_host = nil if @ssh_host == UNSET_VALUE
+
+        # set the ssh port for the machine
+        @ssh_port = nil if @ssh_port == UNSET_VALUE
+
 
         # Mark that we finalized
         @__finalized = true
