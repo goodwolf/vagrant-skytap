@@ -245,6 +245,17 @@ module VagrantPlugins
         end
       end
 
+      # Set the role of the box
+      #
+      # `type` can be the following:
+      #
+      #  * :gateway - set the box as the gateway for provisioning other boxes. Other boxes must specify ssh_port
+      def role(type, **options)
+
+        VagrantPlugins::Skytap::Plugin.setup_gateway
+        puts VagrantPlugins::Skytap::Plugin.gateway
+      end
+
       def validate(machine)
         errors = _detected_errors
 

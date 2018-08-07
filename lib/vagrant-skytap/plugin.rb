@@ -125,6 +125,16 @@ module VagrantPlugins
           logger = nil
         end
       end
+
+      def self.setup_gateway(**options)
+        options = options.dup
+
+        @@gateway = "8.8.8.8"
+      end
+
+      def self.gateway
+        @@gateway
+      end
     end
   end
 end

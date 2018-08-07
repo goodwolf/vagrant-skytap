@@ -38,12 +38,11 @@ module VagrantPlugins
         def call(env)
           env[:machine_ssh_info] = VmProperties.new(env[:machine].data_dir).ssh_info
 
-          puts env[:machine_ssh_info].inspect
-          if defined?(env[:machine].provider_config.ssh_host)
+	  if not env[:machine].provider_config.ssh_host.nil?
             env[:machine_ssh_info][:host] = env[:machine].provider_config.ssh_host
           end
 
-          if defined?(env[:machine].provider_config.vm.ssh_port)
+	  if not env[:machine].provider_config.vm.ssh_port.nil?
             env[:machine_ssh_info][:port] = env[:machine].provider_config.ssh_port
           end
 
